@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Тени новой школы — Сезон 1, Глава 1</title>
+  <style>
+    :root{
+      --bg:#071225; --panel:#0e1720; --accent:#7fb6ff; --danger:#ff6b6b;
+      --muted:#9aa6b2; --glass:rgba(255,255,255,0.03);
+    }
+    html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Roboto,Arial; background:linear-gradient(180deg,#021021, #071225 60%); color:#e6eef8;}
+    .wrap{max-width:1100px;margin:28px auto;padding:18px; display:grid; grid-template-columns: 360px 1fr; gap:18px;}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px; padding:18px; box-shadow:0 6px 24px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.02);}    
+    aside.card{height:800px; overflow:auto;}
+    main.card{height:800px; position:relative; overflow:hidden;}
+    h1{margin:0;font-size:18px}
+    .meta{color:var(--muted); font-size:13px;margin-top:6px}
+    .stats{margin-top:14px}
+    .stat{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+    .label{width:120px;color:var(--muted);font-size:14px}
+    .bar{flex:1;height:12px;background:var(--glass);border-radius:8px;overflow:hidden;position:relative}
+    .bar > i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--accent),#ffa4b3);width:0}
+    .val{width:44px;text-align:right;color:var(--muted)}
+    .log{margin-top:12px;color:var(--muted); font-size:13px; max-height:290px; overflow:auto; padding-right:6px}
+    button{padding:10px 12px;border-radius:8px;border:none;background:#0f2233;color:#eaf3ff;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04); color:var(--muted)}
+    .choices{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+    .scene-title{font-weight:600;margin-bottom:8px}
+    .dialog{white-space:pre-line; line-height:1.6; font-size:15px; color:#f3fbff; padding-right:8px}
+    .overlay-dim{position:absolute;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:50}
+    .panic-ui{display:flex;flex-direction:column;gap:12px;align-items:center}
+    .breath-buttons{display:flex;gap:10px}
+    .breath-btn{padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.06); background:linear-gradient(180deg,#0e2a44,#0c2436); color:#eaf3ff}
+    .small{font-size:13px;color:var(--muted)}
+    .phone{background:#071b2a;border-radius:10px;padding:12px;color:#dff0ff}
+    .app-list{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+    .app{background:rgba(255,255,255,0.02);padding:8px;border-radius:8px;font-size:13px;color:var(--muted)}
+    .center{display:flex;align-items:center;justify-content:center}
+    .shake{animation:shake 0.6s ease-in-out}
+    @keyframes shake{0%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}100%{transform:translateX(0)}}
+    .heartbeat{animation:beat 1s infinite}
+    @keyframes beat{0%{transform:scale(1)}30%{transform:scale(1.06)}60%{transform:scale(1)}100%{transform:scale(1)}}
+    footer{margin-top:12px;color:var(--muted); font-size:13px}
+    @media(max-width:980px){ .wrap{grid-template-columns:1fr} aside.card{order:2} main.card{order:1; height:auto} }
+  </style>
+</head>
+<body>
+  <div class="wrap" role="application" aria-label="Тени новой школы — Сезон 1 Гл.1">
+    <aside class="card" aria-hidden="false">
+      <h1>Шкалы эмоций</h1>
+      <div class="meta">Значения меняются в зависимости от ваших выборов.</div>
+
+      <div class="stats" id="stats">
+        <div class="stat"><div class="label">Страх</div><div class="bar"><i id="bar-fear"></i></div><div class="val" id="val-fear">62%</div></div>
+        <div class="stat"><div class="label">Тревога</div><div class="bar"><i id="bar-anx"></i></div><div class="val" id="val-anx">48%</div></div>
+        <div class="stat"><div class="label">Уверенность</div><div class="bar"><i id="bar-conf"></i></div><div class="val" id="val-conf">6%</div></div>
+        <div class="stat"><div class="label">Соц. энергия</div><div class="bar"><i id="bar-social"></i></div><div class="val" id="val-social">22%</div></div>
+      </div>
+
+      <div style="margin-top:10px">
+        <button id="saveBtn" class="ghost">Сохранить в localStorage</button>
+        <button id="loadBtn" class="ghost" style="margin-left:8px">Загрузить</button>
+        <button id="resetBtn" class="ghost" style="margin-left:8px">Сброс</button>
+      </div>
+
+      <div class="log" id="log" aria-live="polite"></div>
+      <footer>Клавиши: 1-5 — быстрый выбор / В дыхании — клавиши I/H/E</footer>
+    </aside>
+
+    <main class="card" id="main">
+      <div id="sceneRoot" style="padding:6px 8px;">
+        <!-- сцены рендерятся сюда -->
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Состояние игры
+    const state = {
+      fear: 62,
+      anxiety: 48,
+      confidence: 6,
+      social: 22,
+      scene: 1,
+      // вспомогательное
+      panicking: false,
+      savedName: 'shadows_ch1_save'
+    };
+
+    const el = {
+      barFear: document.getElementById('bar-fear'),
+      barAnx: document.getElementById('bar-anx'),
+      barConf: document.getElementById('bar-conf'),
+      barSocial: document.getElementById('bar-social'),
+      valFear: document.getElementById('val-fear'),
+      valAnx: document.getElementById('val-anx'),
+      valConf: document.getElementById('val-conf'),
+      valSocial: document.getElementById('val-social'),
+      sceneRoot: document.getElementById('sceneRoot'),
+      log: document.getElementById('log')
+    };
+
+    function log(msg){
+      const t = new Date().toLocaleTimeString();
+      el.log.innerHTML = `<div>[${t}] ${msg}</div>` + el.log.innerHTML;
+    }
+
+    function clamp(v){ return Math.max(0, Math.min(100, Math.round(v))); }
+    function renderStats(){
+      el.barFear.style.width = state.fear + '%';
+      el.barAnx.style.width = state.anxiety + '%';
+      el.barConf.style.width = state.confidence + '%';
+      el.barSocial.style.width = state.social + '%';
+      el.valFear.textContent = state.fear + '%';
+      el.valAnx.textContent = state.anxiety + '%';
+      el.valConf.textContent = state.confidence + '%';
+      el.valSocial.textContent = state.social + '%';
+    }
+
+    // helper: update multiple stats and log
+    function updateStats(delta, note){
+      if(delta.fear) state.fear = clamp(state.fear + delta.fear);
+      if(delta.anxiety) state.anxiety = clamp(state.anxiety + delta.anxiety);
+      if(delta.confidence) state.confidence = clamp(state.confidence + delta.confidence);
+      if(delta.social) state.social = clamp(state.social + delta.social);
+      renderStats();
+      if(note) log(note);
+    }
+
+    // Scene rendering
+    function renderScene(){
+      const root = el.sceneRoot;
+      root.innerHTML = '';
+      switch(state.scene){
+        case 1: renderScene1(root); break;
+        case 2: renderScene2(root); break;
+        case 3: renderAttack(root); break;
+        case 4: renderPanic(root); break;
+        case 5: renderRescue(root); break;
+        case 6: renderAfterFight(root); break;
+        case 7: renderPhone(root); break;
+        case 8: renderTeachers(root); break;
+        case 9: renderEvening(root); break;
+        case 10: renderEnd(root); break;
+        default: root.innerHTML = '<div class="dialog">Сцена не найдена.</div>';
+      }
+    }
+
+    // Scene 1: Morning intro
+    function renderScene1(root){
+      const html = document.createElement('div');
+      html.innerHTML = `
+        <div class="scene-title">СЕЗОН 1 — ГЛАВА 1: "ДОБРО ПОЖАЛОВАТЬ В АД"</div>
+        <div class="meta small">Сцена 1 — Утро</div>
+        <div class="dialog" style="margin-top:12px">
+Туманное небо над школой. Слегка дрожит камера — ощущение тревоги.
+Новый город. Новая школа. И ощущение, будто воздух слишком тяжёлый, чтобы дышать.
+Беатрис идёт к входу, глаза опущены. Рюкзак кажется тяжелее, чем обычно.
+        </div>
+        <div style="margin-top:14px" class="center">
+          <button id="next1">Идти дальше</button>
+        </div>
+      `;
+      root.appendChild(html);
+      document.getElementById('next1').addEventListener('click', ()=>{
+        state.scene = 2;
+        renderScene();
+        log('Переход: Сцена 1 → Сцена 2 (задиры).');
+      });
+    }
+
+    // Scene 2: Bullies approach with choices
+    function renderScene2(root){
+      const html = document.createElement('div');
+      html.innerHTML = `
+        <div class="scene-title">Сцена 2 — Задиры</div>
+        <div class="dialog" style="margin-top:8px">
+Вдруг раздаётся резкий хлопок — кто-то ударяет по двери рядом.
+Беатрис вздрагивает.
+К ней подходят четверо: Дилан (лидер), Крис (тень), Стефани (телефон), Мия (поддержка).
+Дилан смотрит прямо перед нее:
+— Ну здравствуй, новенькая. Нервничаешь?
+        </div>
+
+        <div class="choices" aria-label="Выборы при встрече">
+          <button id="c1">«Нет… просто спешу.»</button>
+          <button id="c2">«От… отпусти.»</button>
+          <button id="c3">Молчать</button>
+        </div>
+
+        <div class="meta small" style="margin-top:10px">Выбор повлияет на эмоции и на реакцию банды.</div>
+      `;
+      root.appendChild(html);
+
+      document.getElementById('c1').addEventListener('click', ()=>{
+        updateStats({ confidence: +3 }, 'Вы: "Нет… просто спешу." → Уверенность +3. Дилан: "О, дерзкая?"');
+        // small reaction, proceed to attack
+        state.scene = 3;
+        setTimeout(()=>{ renderScene(); }, 700);
+      });
+      document.getElementById('c2').addEventListener('click', ()=>{
+        updateStats({ fear: +6 }, 'Вы: "От… отпусти." → Страх +6. Дилан: "Слабая… скучно."');
+        state.scene = 3;
+        setTimeout(()=>{ renderScene(); }, 700);
+      });
+      document.getElementById('c3').addEventListener('click', ()=>{
+        updateStats({ anxiety: +10 }, 'Молчание → Тревога +10. Миа хмыкает: "Ещё и немая."');
+        state.scene = 3;
+        setTimeout(()=>{ renderScene(); }, 700);
+      });
+
+      // keyboard shortcuts 1-3
+      window.onkeydown = (e)=>{
+        if(e.key === '1') document.getElementById('c1').click();
+        if(e.key === '2') document.getElementById('c2').click();
+        if(e.key === '3') document.getElementById('c3').click();
+      };
+    }
+
+    // Scene 3: Attack happens
+    function renderAttack(root){
+      // update stats due to attack
+      updateStats({ fear: +15, anxiety: +20, social: -10 }, 'Атака: Рюкзак дернули, толкнули. Страх +15, Тревога +20, Соц. энергия -10.');
+      const html = document.createElement('div');
+      html.innerHTML = `
+        <div class="scene-title">Сцена 3 — Нападение</div>
+        <div class="dialog" style="margin-top:8px">
+Крис резко дёргает рюкзак — вещи падают. Мия толкает плечом. Дилан берёт подбородок:
+— Не смотри вниз. Смотри на меня.
+Он отпускает — вы ударяетесь о стену.
+        </div>
+        <div style="margin-top:14px" class="center">
+          <button id="toPanic">... (Экран начинает дрожать)</button>
+        </div>
+      `;
+      root.appendChild(html);
+      document.getElementById('toPanic').addEventListener('click', ()=>{
+        state.scene = 4;
+        renderScene();
+      });
+    }
+
+    // Scene 4: Panic mini-game (breathing mechanic)
+    function renderPanic(root){
+      state.panicking = true;
+      // show overlay-like fullscreen inside main
+      const html = document.createElement('div');
+      html.innerHTML = `
+        <div class="overlay-dim" id="panicOverlay" role="dialog" aria-modal="true">
+          <div class="panic-ui card" style="width:720px; max-width:92%; padding:18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-weight:700">Сцена 4 — Первая паническая атака</div>
+                <div class="small" style="margin-top:6px">Экран дрожит. Сердцебиение громче. Нажимайте в ритм: Вдох → Задержать → Выдох.</div>
+              </div>
+              <div style="color:var(--danger); font-weight:700">ТРЕВОГА ПИК</div>
+            </div>
+
+            <div style="margin-top:18px" id="panicVisual" class="center">
+              <div style="width:220px;height:220px;border-radius:110px;background:linear-gradient(180deg,#112233,#0b1b2a);display:flex;align-items:center;justify-content:center;border:3px solid rgba(255,255,255,0.03)">
+                <div id="pulse" style="font-size:48px;color:#ffccd5">❤</div>
+              </div>
+            </div>
+
+            <div style="margin-top:12px" class="small">Кнопки: либо клики, либо клавиши I (Вдох), H (Задержать), E (Выдох). Выполните 3 правильных циклов подряд.</div>
+
+            <div style="margin-top:12px" class="breath-buttons center" id="breathButtons">
+              <button class="breath-btn" id="bIn">Вдох (I)</button>
+              <button class="breath-btn" id="bHold">Задержать (H)</button>
+              <button class="breath-btn" id="bOut">Выдох (E)</button>
+            </div>
+
+            <div style="margin-top:10px" class="center">
+              <div id="panicStatus" class="small">Прогресс: 0 / 3</div>
+            </div>
+          </div>
+        </div>
+      `;
+      root.appendChild(html);
+
+      // mini-game logic
+      const sequence = ['in','hold','out']; // required order
+      let stepIndex = 0;
+      let cyclesDone = 0;
+      let successNeeded = 3;
+      let timer = null;
+      const timeWindow = 1500; // ms for each step
+
+      const pulse = document.getElementById('pulse');
+      function beatOn(){ pulse.classList.add('heartbeat'); }
+      function beatOff(){ pulse.classList.remove('heartbeat'); }
+
+      function startStepTimer(){
+        clearTimeout(timer);
+        timer = setTimeout(()=>{ failPanic('Пропущен шаг — паника усиливается.'); }, timeWindow);
+      }
+
+      function inputStep(kind){
+        if(state.scene !== 4) return;
+        if(kind !== sequence[stepIndex]){
+          failPanic('Неправильный шаг — паника усиливается.');
+          return;
+        }
+        // correct
+        stepIndex++;
+        pulse.style.transform = 'scale(1.06)';
+        setTimeout(()=> pulse.style.transform = 'scale(1)', 200);
+        if(stepIndex >= sequence.length){
+          // completed one cycle
+          cyclesDone++;
+          stepIndex = 0;
+          document.getElementById('panicStatus').textContent = `Прогресс: ${cyclesDone} / ${successNeeded}`;
+          log(`Дыхание: цикл успешен (${cyclesDone}/${successNeeded}).`);
+          if(cyclesDone >= successNeeded){
+            succeedPanic();
+          } else {
+            // small success, continue
+            startStepTimer();
+          }
+        } else {
+          startStepTimer();
+        }
+      }
+
+      function failPanic(message){
+        clearTimeout(timer);
+        beatOn();
+        // escalate visuals
+        const overlay = document.getElementById('panicOverlay');
+        overlay.querySelector('.panic-ui').classList.add('shake');
+        setTimeout(()=> overlay.querySelector('.panic-ui').classList.remove('shake'), 700);
+        // increase anxiety/fear
+        updateStats({ anxiety: +12, fear: +8 }, message + ' (Тревога +12, Страх +8). Экран почти темнеет.');
+        // brief darkening, then move to rescue
+        const pulseEl = document.getElementById('pulse');
+        pulseEl.style.color = '#ff6b6b';
+        setTimeout(()=> {
+          // proceed to rescue (someone intervenes)
+          state.scene = 5;
+          state.panicking = false;
+          renderScene();
+        }, 1100);
+      }
+
+      function succeedPanic(){
+        clearTimeout(timer);
+        beatOff();
+        updateStats({ anxiety: -20, fear: -8 }, 'Успешно успокоились дыханием — паника ослабевает (Тревога -20, Страх -8).');
+        const overlay = document.getElementById('panicOverlay');
+        overlay.querySelector('.panic-ui').style.transition = 'opacity 0.6s';
+        overlay.querySelector('.panic-ui').style.opacity = '0.0';
+        setTimeout(()=>{
+          // remove overlay and continue to rescue scene (someone вмешался)
+          state.scene = 5;
+          state.panicking = false;
+          renderScene();
+        }, 700);
+      }
+
+      // button listeners and keyboard
+      document.getElementById('bIn').onclick = ()=> inputStep('in');
+      document.getElementById('bHold').onclick = ()=> inputStep('hold');
+      document.getElementById('bOut').onclick = ()=> inputStep('out');
+
+      window.onkeydown = (e)=> {
+        if(state.scene === 4){
+          if(e.key.toLowerCase() === 'i') inputStep('in');
+          if(e.key.toLowerCase() === 'h') inputStep('hold');
+          if(e.key.toLowerCase() === 'e') inputStep('out');
+        }
+      };
+
+      // start timer
+      startStepTimer();
+      log('Паническая атака начата — игроку предложено дыхание (3 цикла).');
+    }
+
+    // Scene 5: Rescue by Gilbert
+    function renderRescue(root){
+      const html = document.createElement('div');
+      html.innerHTML = `
+        <div class="scene-title">Сцена 5 — Спасение</div>
+        <div class="dialog" style="margin-top:8px">
+В этот момент чья-то рука резко перехватывает запястье Дилана.
+— Отпусти её. Сейчас же.
+Перед Беатрис стоит Гильберт — высокий, спокойный. Его глаза полны ярости.
+Он бьёт Криса, затем Дилана. Стефани визжит, Мия отступает.
+        </div>
+
+        <div style="margin-top:12px" class="choices">
+          <button id="g1">«Спасибо…»</button>
+          <button id="g2">«Я сама справлюсь.»</button>
+          <button id="g3">Отодвинуться</button>
+        </div>
+
+        <div class="meta small" style="margin-top:8px">Выбор влияет на отношения и эмоции.</div>
+      `;
+      root.appendChild(html);
+
+      document.getElementById('g1').addEventListener('click', ()=>{
+        updateStats({ confidence: 0, fear: -5 }, 'Вы: "Спасибо…" → Доверие к Гильберту растёт, Страх -5.');
+        // we also add symbolic trust via confidence boost later
+        state.scene = 6;
+        setTimeout(()=> renderScene(), 400);
+      });
+      document.getElementById('g2').addEventListener('click', ()=>{
+        updateStats({ confidence: +6 }, 'Вы: "Я сама справлюсь." → Уверенность +6. Гильберт: "Хорошо. Но я рядом."');
+        state.scene = 6;
+        setTimeout(()=> renderScene(), 400);
+      });
+      document.getElementById('g3').addEventListener('click', ()=>{
+        updateStats({ anxiety: +5 }, 'Вы отодвигаетесь → Тревога +5. Гильберт: "Не бойся меня…"');
+        state.scene = 6;
+        setTimeout(()=> renderScene(), 400);
+      });
+    }
+
+    // Scene 6: After fight — short
+    function renderAfterFight(root){
+      const html = document.createElement('div');
+      html.innerHTML = `
+        <div class="scene-title">Сцена 6 — После драки</div>
+        <div class="dialog" style="margin-top:8px">
+Гильберт наклоняется:
+— Ты можешь ходить? Позволь мне помочь. Пожалуйста.
+Беатрис медленно собирает вещи. Толпа расходится, но шёпоты остаются.
+        </div>
+        <div style="margin-top:12px" class="center">
+          <button id="toPhone">Идти в класс (Телефон)</button>
+        </div>
+      `;
+      root.appendChild(html);
+      document.getElementById('toPhone').addEventListener('click', ()=>{
+        state.scene = 7;
+        renderScene();
+        log('Переход к интерфейсу телефона (Сцена 7).');
+      });
+    }
+
+    // Scene 7: Phone interface
+    function renderPhone(root){
+      const html = document.createElement('div');
+      html.innerHTML = `
+        <div class="scene-title">Сцена 7 — Телефон</div>
+        <div class="dialog" style="margin-top:8px">
+Экран телефона. Приложения: Messages, SkoolNet, Pulse, Diary, Notes, Music, Camera, NovaChat.
+Телефон вибрирует.
+        </div>
+
+        <div style="margin-top:10px" class="phone">
+          <div style="font-weight:700">Приложения</div>
+          <div class="app-list">
+            <div class="app">Messages</div>
+            <div class="app">SkoolNet</div>
+            <div class="app">Pulse</div>
+            <div class="app">Diary</div>
+            <div class="app">Notes</div>
+            <div class="app">Music</div>
+            <div class="app">Camera</div>
+            <div class="app">NovaChat</div>
+          </div>
+
+          <div style="margin-top:12px" id="phoneNotif" class="small">Новое сообщение от <strong>НЕИЗВЕСТНЫЙ</strong> появится здесь.</div>
+          <div style="margin-top:10px" class="center">
+            <button id="readMsg">Прочесть сообщение</button>
+          </div>
+        </div>
+      `;
+      root.appendChild(html);
+
+      document.getElementById('readMsg').addEventListener('click', ()=>{
+        const notif = document.getElementById('phoneNotif');
+        notif.innerHTML = `<div style="margin-top:8px"><em>"Герой не всегда сможет тебя защитить. Запомни это."</em> — от НЕИЗВЕСТНОГО.</div>`;
+        log('Получено анонимное сообщение: "Герой не всегда сможет тебя защитить..."');
+        // small suspense; then go to teachers scene
+        setTimeout(()=> {
+          state.scene = 8;
+          renderScene();
+        }, 1400);
+      });
+    }
+
+    // Scene 8: Teachers don't believe
+    function renderTeachers(root){
+      const html = document.createElement('div');
+      html.innerHTML = `
+        <div class="scene-title">Сцена 8 — Учителя не верят</div>
+        <div class="dialog" style="margin-top:8px">
+Беатрис рассказывает родителям, но классная руководительница звонит первой.
+Учительница: "Она сама провоцирует. Она конфликтная. Дети просто реагируют на её поведение."
+Родители сомневаются. Беатрис расстроена.
+        </div>
+        <div style="margin-top:12px" class="center">
+          <button id="toEvening">Вечер</button>
+        </div>
+      `;
+      root.appendChild(html);
+      document.getElementById('toEvening').addEventListener('click', ()=>{
+        state.scene = 9;
+        renderScene();
+      });
+    }
+
+    // Scene 9: Evening — NovaChat activates
+    function renderEvening(root){
+      const html = document.createElement('div');
+      html.innerHTML = `
+        <div class="scene-title">Сцена 9 — Вечер</div>
+        <div class="dialog" style="margin-top:8px">
+Беатрис сидит на полу в комнате. Телефон вибрирует снова. NovaChat активируется.
+Появляется новое анонимное сообщение:
+        </div>
+
+        <div style="margin-top:12px" class="phone">
+          <div class="small"><em>"Я видел, что они с тобой сделали. Ты не заслуживаешь этого. Ты сильнее, чем думаешь. Скоро ты узнаешь, кто я."</em></div>
+        </div>
+
+        <div style="margin-top:12px" class="center">
+          <button id="endChapter">Завершить главу</button>
+        </div>
+      `;
+      root.appendChild(html);
+
+      document.getElementById('endChapter').addEventListener('click', ()=>{
+        state.scene = 10;
+        renderScene();
+        log('Глава 1 завершена.');
+      });
+    }
+
+    // Scene 10: End of chapter
+    function renderEnd(root){
+      const html = document.createElement('div');
+      html.innerHTML = `
+        <div class="scene-title">КОНЕЦ ГЛАВЫ 1</div>
+        <div class="dialog" style="margin-top:8px">
+Камера медленно затемняется. В воздухе — обещание, что это только начало.
+Новые вопросы. Новые угрозы. Ты не одна.
+        </div>
+        <div style="margin-top:12px" class="center">
+          <button id="restart">Пройти снова</button>
+        </div>
+      `;
+      root.appendChild(html);
+      document.getElementById('restart').addEventListener('click', ()=>{
+        resetState();
+        renderScene();
+      });
+    }
+
+    // Save / Load / Reset
+    document.getElementById('saveBtn').addEventListener('click', ()=>{
+      localStorage.setItem(state.savedName, JSON.stringify(state));
+      log('Прогресс сохранён в localStorage.');
+    });
+    document.getElementById('loadBtn').addEventListener('click', ()=>{
+      const s = localStorage.getItem(state.savedName);
+      if(!s) { alert('Сохранений не найдено.'); return; }
+      const data = JSON.parse(s);
+      Object.assign(state, data);
+      renderStats();
+      log('Прогресс загружен из localStorage.');
+      renderScene();
+    });
+    document.getElementById('resetBtn').addEventListener('click', ()=>{
+      if(!confirm('Сбросить прогресс и статы?')) return;
+      resetState();
+      renderStats();
+      renderScene();
+      el.log.innerHTML = '';
+      log('Прогресс сброшен.');
+    });
+
+    function resetState(){
+      state.fear = 62;
+      state.anxiety = 48;
+      state.confidence = 6;
+      state.social = 22;
+      state.scene = 1;
+      state.panicking = false;
+      renderStats();
+      log('Статы установлены в начальные значения.');
+    }
+
+    // initial render
+    renderStats();
+    renderScene();
+    log('Глава 1 загружена. Добро пожаловать в Ад.');
+
+    // Accessibility / global keys
+    window.addEventListener('keydown', (e) => {
+      // quick shortcuts for choices in scene 2 (1..3)
+      if(state.scene === 2){
+        if(e.key === '1') document.querySelector('#c1')?.click();
+        if(e.key === '2') document.querySelector('#c2')?.click();
+        if(e.key === '3') document.querySelector('#c3')?.click();
+      }
+      // panic keys handled earlier
+    });
+  </script>
+</body>
+</html>

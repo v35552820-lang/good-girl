@@ -1,0 +1,63 @@
+:root{
+  --bg:#E1E8F0;
+  --panel:#AEC6FF;
+  --danger:#FF8591;
+  --neutral:#FFDCA7;
+  --support:#C8F7DC;
+  --glass: rgba(255,255,255,0.6);
+  --text:#0b2233;
+  --radius:12px;
+  --button-shadow: 0 6px 18px rgba(10,20,30,0.12);
+  --transition-fast: 120ms cubic-bezier(.2,.8,.2,1);
+  --transition-smooth: 260ms cubic-bezier(.2,.8,.2,1);
+}
+
+/* Basic components */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  margin: 0;
+  -webkit-font-smoothing:antialiased;
+}
+
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0.6));
+  border-radius: var(--radius);
+  box-shadow: var(--button-shadow);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.5);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.btn {
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 8px 12px;
+  border: none;
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.btn:active { transform: scale(0.98); }
+.btn--ghost { background: transparent; border: 1px solid rgba(0,0,0,0.06); color: var(--text); }
+
+/* Panic state helpers */
+.panic-overlay {
+  background: linear-gradient(180deg, rgba(255,120,120,0.12), rgba(255,40,40,0.12));
+  backdrop-filter: blur(4px);
+}
+
+.shake { animation: shake 0.6s ease-in-out; }
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  50% { transform: translateX(6px); }
+  75% { transform: translateX(-4px); }
+  100% { transform: translateX(0); }
+}
+
+/* Small helpers */
+.hidden { display:none; }
+.center { display:flex; align-items:center; justify-content:center; }

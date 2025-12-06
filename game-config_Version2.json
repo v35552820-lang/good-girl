@@ -1,0 +1,25 @@
+{
+  "initialStats": {
+    "fear": 62,
+    "anxiety": 48,
+    "confidence": 6,
+    "socialEnergy": 22,
+    "willpower": 20
+  },
+  "musicTracks": [
+    { "id": "rainy_calm", "title": "Rainy Calm", "effect": { "calm": 15 } },
+    { "id": "dark_thoughts", "title": "Dark Thoughts", "effect": { "calm": -10 } },
+    { "id": "hopeful_morning", "title": "Hopeful Morning", "effect": { "willpower": 10 } }
+  ],
+  "apps": [
+    "Messages", "Gallery", "Evidence", "Map", "Music", "Diary", "SOS", "SPEAK", "Mail", "EmotionsSettings", "Breathe"
+  ],
+  "panic": {
+    "triggerAnxiety": 80,
+    "triggerVulnerability": 75,
+    "breathCyclesRequired": 3,
+    "perFailPenalty": { "anxiety": 12, "fear": 8 },
+    "perSuccessReward": { "anxiety": -20, "fear": -8, "willpower": 3 }
+  },
+  "reputation": { "base": 50 }
+}
